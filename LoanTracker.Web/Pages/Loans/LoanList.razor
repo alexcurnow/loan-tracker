@@ -58,6 +58,7 @@ else
               Loading="@LoanState.Value.IsLoading"
               Class="mt-4"
               OnRowClick="@OnRowClick"
+              RowStyle="cursor: pointer;"
               T="LoanDto">
         <HeaderContent>
             <MudTh><MudTableSortLabel SortBy="new Func<LoanDto, object>(x => x.BorrowerName)">Borrower</MudTableSortLabel></MudTh>

@@ -4,6 +4,7 @@
 @inherits Fluxor.Blazor.Web.Components.FluxorComponent
 @inject IState<LoanState> LoanState
 @inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
 
 <PageTitle>Dashboard - Loan Tracker</PageTitle>
 
@@ -90,7 +91,12 @@ else
     </MudGrid>
 
     <MudText Typo="Typo.h5" Class="mt-6 mb-4">Recent Applications</MudText>
-    <MudTable Items="@LoanState.Value.Loans.OrderByDescending(l => l.ApplicationDate).Take(10)" Hover="true" Breakpoint="Breakpoint.Sm">
+    <MudTable Items="@LoanState.Value.Loans.OrderByDescending(l => l.ApplicationDate).Take(10)"
+              Hover="true"
+              Breakpoint="Breakpoint.Sm"
+              OnRowClick="@OnRowClick"
+              RowStyle="cursor: pointer;"
+              T="LoanDto">
         <HeaderContent>
             <MudTh>Borrower</MudTh>
             <MudTh>Type</MudTh>
@@ -115,6 +121,11 @@ else
     {
         base.OnInitialized();
         Dispatcher.Dispatch(new LoadLoansAction());
+    }
+
+    private void OnRowClick(TableRowClickEventArgs<LoanDto> args)
+    {
+        Navigation.NavigateTo($"/loans/{args.Item.LoanId}");
     }
 
     private Color GetStatusColor(LoanStatus status)
