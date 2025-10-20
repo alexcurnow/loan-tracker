@@ -1,0 +1,231 @@
+@page "/loans/{LoanId:guid}"
+@using LoanTracker.Web.Store.LoanState
+@using LoanTracker.Domain.Services
+@using System.Globalization
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@inject IState<LoanState> LoanState
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject WorkflowStateMachine StateMachine
+
+<PageTitle>Loan Details - Loan Tracker</PageTitle>
+
+@if (LoanState.Value.IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (LoanState.Value.SelectedLoan == null)
+{
+    <MudAlert Severity="Severity.Warning">Loan not found</MudAlert>
+}
+else
+{
+    var loan = LoanState.Value.SelectedLoan;
+    var validTransitions = StateMachine.GetValidTransitions(loan.Status);
+
+    <MudGrid>
+        <MudItem xs="12">
+            <MudBreadcrumbs Items="_breadcrumbs" />
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudPaper Class="pa-4">
+                <div class="d-flex justify-space-between align-center mb-4">
+                    <MudText Typo="Typo.h4">Loan Details</MudText>
+                    <MudText Color="@GetStatusColor(loan.Status)" Typo="Typo.h5">
+                        <strong>@loan.Status</strong>
+                    </MudText>
+                </div>
+
+                <MudDivider Class="mb-4" />
+
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-2">Borrower Information</MudText>
+                        <MudSimpleTable Dense="true">
+                            <tbody>
+                                <tr>
+                                    <td><strong>Borrower Name:</strong></td>
+                                    <td>@loan.BorrowerName</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Borrower Type:</strong></td>
+                                    <td>@loan.BorrowerTypeName</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Contact Person:</strong></td>
+                                    <td>@loan.ContactPerson</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Contact Email:</strong></td>
+                                    <td>@loan.ContactEmail</td>
+                                </tr>
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6" Class="mb-2">Loan Information</MudText>
+                        <MudSimpleTable Dense="true">
+                            <tbody>
+                                <tr>
+                                    <td><strong>Amount:</strong></td>
+                                    <td>@loan.Amount.ToString("C", CultureInfo.GetCultureInfo("en-US"))</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Interest Rate:</strong></td>
+                                    <td>@loan.InterestRate.ToString("F2")%</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Term:</strong></td>
+                                    <td>@loan.TermYears years</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Application Date:</strong></td>
+                                    <td>@loan.ApplicationDate.ToString("MMM dd, yyyy")</td>
+                                </tr>
+                                @if (loan.DecisionDate.HasValue)
+                                {
+                                    <tr>
+                                        <td><strong>Decision Date:</strong></td>
+                                        <td>@loan.DecisionDate.Value.ToString("MMM dd, yyyy")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.h6" Class="mb-2">Purpose</MudText>
+                        <MudPaper Elevation="0" Class="pa-3 mud-background-gray">
+                            <MudText>@loan.Purpose</MudText>
+                        </MudPaper>
+                    </MudItem>
+
+                    @if (!string.IsNullOrWhiteSpace(loan.ReviewerNotes))
+                    {
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.h6" Class="mb-2">Reviewer Notes</MudText>
+                            <MudPaper Elevation="0" Class="pa-3 mud-background-gray">
+                                <MudText>@loan.ReviewerNotes</MudText>
+                            </MudPaper>
+                        </MudItem>
+                    }
+
+                    @if (validTransitions.Any())
+                    {
+                        <MudItem xs="12">
+                            <MudDivider Class="my-4" />
+                            <MudText Typo="Typo.h6" Class="mb-3">Available Actions</MudText>
+                            <MudStack Row="true" Spacing="2">
+                                @foreach (var transition in validTransitions)
+                                {
+                                    <MudButton Variant="Variant.Filled"
+                                               Color="@GetTransitionButtonColor(transition)"
+                                               OnClick="@(() => TransitionLoan(transition))">
+                                        @GetTransitionButtonText(transition)
+                                    </MudButton>
+                                }
+                            </MudStack>
+                        </MudItem>
+                    }
+                    else if (loan.Status == LoanStatus.Approved || loan.Status == LoanStatus.Denied)
+                    {
+                        <MudItem xs="12">
+                            <MudAlert Severity="Severity.Info" Class="mt-4">
+                                This loan is in a terminal state. No further transitions are allowed.
+                            </MudAlert>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@if (LoanState.Value.ErrorMessage != null)
+{
+    Snackbar.Add(LoanState.Value.ErrorMessage, Severity.Error);
+    Dispatcher.Dispatch(new ClearErrorAction());
+}
+
+@code {
+    [Parameter]
+    public Guid LoanId { get; set; }
+
+    private List<BreadcrumbItem> _breadcrumbs = new();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _breadcrumbs = new List<BreadcrumbItem>
+        {
+            new BreadcrumbItem("Home", href: "/"),
+            new BreadcrumbItem("Loans", href: "/loans"),
+            new BreadcrumbItem("Details", href: null, disabled: true)
+        };
+        Dispatcher.Dispatch(new LoadLoanByIdAction(LoanId));
+    }
+
+    private void TransitionLoan(LoanStatus toStatus)
+    {
+        string? reviewerNotes = null;
+
+        // For now, we'll skip the dialog and just transition
+        // In a production app, you'd want to collect reviewer notes for Approved/Denied states
+        if (toStatus == LoanStatus.Approved)
+        {
+            reviewerNotes = $"Approved on {DateTime.Now:MMM dd, yyyy}";
+        }
+        else if (toStatus == LoanStatus.Denied)
+        {
+            reviewerNotes = $"Denied on {DateTime.Now:MMM dd, yyyy}";
+        }
+
+        Dispatcher.Dispatch(new TransitionLoanStatusAction(LoanId, toStatus, reviewerNotes));
+        Snackbar.Add($"Loan status updated to {toStatus}", Severity.Success);
+    }
+
+    private Color GetStatusColor(LoanStatus status)
+    {
+        return status switch
+        {
+            LoanStatus.Open => Color.Default,
+            LoanStatus.AwaitingReview => Color.Info,
+            LoanStatus.ApprovalPending => Color.Warning,
+            LoanStatus.Approved => Color.Success,
+            LoanStatus.Denied => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private Color GetTransitionButtonColor(LoanStatus toStatus)
+    {
+        return toStatus switch
+        {
+            LoanStatus.Open => Color.Default,
+            LoanStatus.AwaitingReview => Color.Info,
+            LoanStatus.ApprovalPending => Color.Warning,
+            LoanStatus.Approved => Color.Success,
+            LoanStatus.Denied => Color.Error,
+            _ => Color.Primary
+        };
+    }
+
+    private string GetTransitionButtonText(LoanStatus toStatus)
+    {
+        return toStatus switch
+        {
+            LoanStatus.Open => "Send Back to Open",
+            LoanStatus.AwaitingReview => toStatus == LoanState.Value.SelectedLoan?.Status
+                ? "Keep in Review"
+                : "Submit for Review",
+            LoanStatus.ApprovalPending => "Move to Approval Pending",
+            LoanStatus.Approved => "Approve Loan",
+            LoanStatus.Denied => "Deny Loan",
+            _ => toStatus.ToString()
+        };
+    }
+}

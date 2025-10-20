@@ -1,0 +1,140 @@
+@page "/"
+@using LoanTracker.Web.Store.LoanState
+@using System.Globalization
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@inject IState<LoanState> LoanState
+@inject IDispatcher Dispatcher
+
+<PageTitle>Dashboard - Loan Tracker</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Loan Dashboard</MudText>
+
+@if (LoanState.Value.IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Total Loans</MudText>
+                    <MudText Typo="Typo.h3">@LoanState.Value.Loans.Count()</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Open</MudText>
+                    <MudText Typo="Typo.h3" Color="Color.Default">@LoanState.Value.Loans.Count(l => l.Status == LoanStatus.Open)</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Awaiting Review</MudText>
+                    <MudText Typo="Typo.h3" Color="Color.Info">@LoanState.Value.Loans.Count(l => l.Status == LoanStatus.AwaitingReview)</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Approval Pending</MudText>
+                    <MudText Typo="Typo.h3" Color="Color.Warning">@LoanState.Value.Loans.Count(l => l.Status == LoanStatus.ApprovalPending)</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Approved</MudText>
+                    <MudText Typo="Typo.h3" Color="Color.Success">@LoanState.Value.Loans.Count(l => l.Status == LoanStatus.Approved)</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Denied</MudText>
+                    <MudText Typo="Typo.h3" Color="Color.Error">@LoanState.Value.Loans.Count(l => l.Status == LoanStatus.Denied)</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Total Amount</MudText>
+                    <MudText Typo="Typo.h3">@LoanState.Value.Loans.Sum(l => l.Amount).ToString("C0", CultureInfo.GetCultureInfo("en-US"))</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Approval Rate</MudText>
+                    <MudText Typo="Typo.h3">@GetApprovalRate()%</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudText Typo="Typo.h5" Class="mt-6 mb-4">Recent Applications</MudText>
+    <MudTable Items="@LoanState.Value.Loans.OrderByDescending(l => l.ApplicationDate).Take(10)" Hover="true" Breakpoint="Breakpoint.Sm">
+        <HeaderContent>
+            <MudTh>Borrower</MudTh>
+            <MudTh>Type</MudTh>
+            <MudTh>Amount</MudTh>
+            <MudTh>Application Date</MudTh>
+            <MudTh>Status</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Borrower">@context.BorrowerName</MudTd>
+            <MudTd DataLabel="Type">@context.BorrowerTypeName</MudTd>
+            <MudTd DataLabel="Amount">@context.Amount.ToString("C0", CultureInfo.GetCultureInfo("en-US"))</MudTd>
+            <MudTd DataLabel="Application Date">@context.ApplicationDate.ToString("MMM dd, yyyy")</MudTd>
+            <MudTd DataLabel="Status">
+                <MudText Color="@GetStatusColor(context.Status)">@context.Status</MudText>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Dispatcher.Dispatch(new LoadLoansAction());
+    }
+
+    private Color GetStatusColor(LoanStatus status)
+    {
+        return status switch
+        {
+            LoanStatus.Open => Color.Default,
+            LoanStatus.AwaitingReview => Color.Info,
+            LoanStatus.ApprovalPending => Color.Warning,
+            LoanStatus.Approved => Color.Success,
+            LoanStatus.Denied => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private string GetApprovalRate()
+    {
+        var total = LoanState.Value.Loans.Count(l => l.Status == LoanStatus.Approved || l.Status == LoanStatus.Denied);
+        if (total == 0) return "0";
+        var approved = LoanState.Value.Loans.Count(l => l.Status == LoanStatus.Approved);
+        return ((double)approved / total * 100).ToString("F1");
+    }
+}

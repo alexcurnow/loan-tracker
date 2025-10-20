@@ -1,0 +1,16 @@
+**/.dockerignore
+**/.git
+**/.gitignore
+**/.vs
+**/.vscode
+**/*.*proj.user
+**/bin
+**/obj
+**/out
+**/node_modules
+**/wwwroot/lib
+**/.idea
+**/.DS_Store
+**/docker-compose*
+**/Dockerfile*
+**/.env

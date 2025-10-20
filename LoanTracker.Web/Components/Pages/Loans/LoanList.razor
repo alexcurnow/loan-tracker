@@ -1,0 +1,136 @@
+@page "/loans"
+@using LoanTracker.Web.Store.LoanState
+@using System.Globalization
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@inject IState<LoanState> LoanState
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
+
+<PageTitle>All Loans - Loan Tracker</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">All Loans</MudText>
+
+@if (LoanState.Value.IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudCard>
+        <MudCardContent>
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_searchString"
+                                  Label="Search"
+                                  Placeholder="Search loans..."
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  Immediate="true" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudSelect T="LoanStatus?" @bind-Value="_statusFilter" Label="Filter by Status" Clearable="true">
+                        <MudSelectItem T="LoanStatus?" Value="null">All Statuses</MudSelectItem>
+                        <MudSelectItem T="LoanStatus?" Value="LoanStatus.Open">Open</MudSelectItem>
+                        <MudSelectItem T="LoanStatus?" Value="LoanStatus.AwaitingReview">Awaiting Review</MudSelectItem>
+                        <MudSelectItem T="LoanStatus?" Value="LoanStatus.ApprovalPending">Approval Pending</MudSelectItem>
+                        <MudSelectItem T="LoanStatus?" Value="LoanStatus.Approved">Approved</MudSelectItem>
+                        <MudSelectItem T="LoanStatus?" Value="LoanStatus.Denied">Denied</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="2">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="@(() => Navigation.NavigateTo("/loans/create"))"
+                               FullWidth="true">
+                        Create Loan
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+
+    <MudTable Items="@FilteredLoans"
+              Hover="true"
+              Breakpoint="Breakpoint.Sm"
+              Loading="@LoanState.Value.IsLoading"
+              Class="mt-4"
+              OnRowClick="@OnRowClick"
+              T="LoanDto">
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<LoanDto, object>(x => x.BorrowerName)">Borrower</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<LoanDto, object>(x => x.BorrowerTypeName)">Type</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<LoanDto, object>(x => x.Amount)">Amount</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<LoanDto, object>(x => x.InterestRate)">Interest Rate</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<LoanDto, object>(x => x.TermYears)">Term</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<LoanDto, object>(x => x.ApplicationDate)">Application Date</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<LoanDto, object>(x => x.Status)">Status</MudTableSortLabel></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Borrower">@context.BorrowerName</MudTd>
+            <MudTd DataLabel="Type">@context.BorrowerTypeName</MudTd>
+            <MudTd DataLabel="Amount">@context.Amount.ToString("C0", CultureInfo.GetCultureInfo("en-US"))</MudTd>
+            <MudTd DataLabel="Interest Rate">@context.InterestRate.ToString("F2")%</MudTd>
+            <MudTd DataLabel="Term">@context.TermYears years</MudTd>
+            <MudTd DataLabel="Application Date">@context.ApplicationDate.ToString("MMM dd, yyyy")</MudTd>
+            <MudTd DataLabel="Status">
+                <MudText Color="@GetStatusColor(context.Status)">@context.Status</MudText>
+            </MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
+        </PagerContent>
+    </MudTable>
+}
+
+@code {
+    private string _searchString = "";
+    private LoanStatus? _statusFilter = null;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Dispatcher.Dispatch(new LoadLoansAction());
+    }
+
+    private IEnumerable<LoanDto> FilteredLoans
+    {
+        get
+        {
+            var loans = LoanState.Value.Loans;
+
+            if (!string.IsNullOrWhiteSpace(_searchString))
+            {
+                loans = loans.Where(l =>
+                    l.BorrowerName.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+                    l.BorrowerTypeName.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+                    l.Status.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (_statusFilter.HasValue)
+            {
+                loans = loans.Where(l => l.Status == _statusFilter.Value);
+            }
+
+            return loans.OrderByDescending(l => l.ApplicationDate);
+        }
+    }
+
+    private void OnRowClick(TableRowClickEventArgs<LoanDto> args)
+    {
+        Navigation.NavigateTo($"/loans/{args.Item.LoanId}");
+    }
+
+    private Color GetStatusColor(LoanStatus status)
+    {
+        return status switch
+        {
+            LoanStatus.Open => Color.Default,
+            LoanStatus.AwaitingReview => Color.Info,
+            LoanStatus.ApprovalPending => Color.Warning,
+            LoanStatus.Approved => Color.Success,
+            LoanStatus.Denied => Color.Error,
+            _ => Color.Default
+        };
+    }
+}
