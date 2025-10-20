@@ -47,6 +47,10 @@ LoanTracker.sln
 - [Docker](https://www.docker.com/get-started) (for containerized deployment)
 - [PostgreSQL 16](https://www.postgresql.org/download/) (if running without Docker)
 
+### Corporate TLS inspection note
+If `dotnet restore` fails with SSL errors, export your org¿s root (and intermediate) CA(s) and place them in `certs/`.  
+Then rebuild: `docker compose build --no-cache && docker compose up`.
+
 ### Running with Docker (Recommended)
 
 1. **Clone the repository**

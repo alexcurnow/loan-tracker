@@ -115,3 +115,7 @@ Thumbs.db
 # appsettings with secrets (keep appsettings.json, ignore appsettings.Development.json if it has secrets)
 appsettings.Development.json
 appsettings.Production.json
+
+certs/*.crt
+certs/*.pem
+!certs/README.md

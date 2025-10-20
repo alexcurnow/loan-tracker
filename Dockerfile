@@ -2,6 +2,11 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
+# Trust corporate CA(s)
+COPY certs/*.crt /usr/local/share/ca-certificates/
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+ && update-ca-certificates && rm -rf /var/lib/apt/lists/*
+
 # Copy solution and project files
 COPY LoanTracker.sln ./
 COPY LoanTracker.Domain/LoanTracker.Domain.csproj ./LoanTracker.Domain/
