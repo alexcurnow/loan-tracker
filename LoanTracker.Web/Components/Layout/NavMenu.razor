@@ -1,5 +1,36 @@
+@using LoanTracker.Web.Components.Dialogs
+@inject IDialogService DialogService
+
 <MudNavMenu>
     <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
     <MudNavLink Href="/loans" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">All Loans</MudNavLink>
-    <MudNavLink Href="/loans/create" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Add">Create Loan</MudNavLink>
+    <MudNavLink OnClick="OpenCreateDialog" Icon="@Icons.Material.Filled.Add">Create Loan</MudNavLink>
 </MudNavMenu>
+
+@code {
+    private IDialogReference? _currentDialog;
+
+    private async Task OpenCreateDialog()
+    {
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        var parameters = new DialogParameters
+        {
+            { "OnDialogClose", EventCallback.Factory.Create<bool>(this, HandleDialogClose) }
+        };
+
+        _currentDialog = await DialogService.ShowAsync<CreateLoanDialog>("Create New Loan Application", parameters, options);
+        await _currentDialog.Result;
+    }
+
+    private void HandleDialogClose(bool success)
+    {
+        _currentDialog?.Close();
+    }
+}
+

@@ -4,6 +4,7 @@
 @using LoanTracker.Application.Queries
 @using LoanTracker.Domain.Entities
 @using System.ComponentModel.DataAnnotations
+@using System.Globalization
 @inherits Fluxor.Blazor.Web.Components.FluxorComponent
 @inject IState<LoanState> LoanState
 @inject IDispatcher Dispatcher
@@ -73,6 +74,7 @@
                                          For="@(() => _model.Amount)"
                                          Variant="Variant.Outlined"
                                          Format="C0"
+                                         Culture="@CultureInfo.GetCultureInfo("en-US")"
                                          Min="0m"
                                          Required="true"
                                          Class="mb-3" />

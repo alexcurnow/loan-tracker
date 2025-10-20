@@ -1,0 +1,195 @@
+@using LoanTracker.Web.Store.LoanState
+@using LoanTracker.Application.Interfaces
+@using LoanTracker.Application.Queries
+@using LoanTracker.Domain.Entities
+@using System.ComponentModel.DataAnnotations
+@using System.Globalization
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@inject IState<LoanState> LoanState
+@inject IDispatcher Dispatcher
+@inject ISnackbar Snackbar
+@inject IQueryHandler<GetAllBorrowerTypesQuery, IEnumerable<BorrowerType>> BorrowerTypeHandler
+
+<MudDialog>
+    <DialogContent>
+        <EditForm Model="@_model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudText Typo="Typo.h6" Class="mb-3">Borrower Information</MudText>
+
+                    <MudTextField Label="Borrower Name"
+                                  @bind-Value="_model.BorrowerName"
+                                  For="@(() => _model.BorrowerName)"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  Class="mb-3" />
+
+                    <MudSelect T="int?"
+                               Label="Borrower Type"
+                               @bind-Value="_model.BorrowerTypeId"
+                               For="@(() => _model.BorrowerTypeId)"
+                               Variant="Variant.Outlined"
+                               Placeholder="Select a borrower type"
+                               Required="true"
+                               Class="mb-3">
+                        @foreach (var type in _borrowerTypes)
+                        {
+                            <MudSelectItem T="int?" Value="@type.BorrowerTypeId">@type.TypeName</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudTextField Label="Contact Person"
+                                  @bind-Value="_model.ContactPerson"
+                                  For="@(() => _model.ContactPerson)"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  Class="mb-3" />
+
+                    <MudTextField Label="Contact Email"
+                                  @bind-Value="_model.ContactEmail"
+                                  For="@(() => _model.ContactEmail)"
+                                  Variant="Variant.Outlined"
+                                  InputType="InputType.Email"
+                                  Required="true"
+                                  Class="mb-3" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudText Typo="Typo.h6" Class="mb-3">Loan Details</MudText>
+
+                    <MudNumericField Label="Loan Amount"
+                                     @bind-Value="_model.Amount"
+                                     For="@(() => _model.Amount)"
+                                     Variant="Variant.Outlined"
+                                     Format="C0"
+                                     Culture="@CultureInfo.GetCultureInfo("en-US")"
+                                     Min="0m"
+                                     Required="true"
+                                     Class="mb-3" />
+
+                    <MudNumericField Label="Interest Rate (%)"
+                                     @bind-Value="_model.InterestRate"
+                                     For="@(() => _model.InterestRate)"
+                                     Variant="Variant.Outlined"
+                                     Format="F2"
+                                     Min="0m"
+                                     Max="100m"
+                                     Required="true"
+                                     Class="mb-3" />
+
+                    <MudNumericField Label="Term (Years)"
+                                     @bind-Value="_model.TermYears"
+                                     For="@(() => _model.TermYears)"
+                                     Variant="Variant.Outlined"
+                                     Min="1"
+                                     Max="50"
+                                     Required="true"
+                                     Class="mb-3" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField Label="Purpose"
+                                  @bind-Value="_model.Purpose"
+                                  For="@(() => _model.Purpose)"
+                                  Variant="Variant.Outlined"
+                                  Lines="5"
+                                  Required="true"
+                                  Class="mb-3" />
+                </MudItem>
+            </MudGrid>
+
+            <ValidationSummary />
+
+            <MudCardActions Class="mt-4">
+                <MudButton OnClick="Cancel">Cancel</MudButton>
+                <MudButton ButtonType="ButtonType.Submit"
+                           Color="Color.Primary"
+                           Variant="Variant.Filled"
+                           Disabled="@LoanState.Value.IsLoading">
+                    @if (LoanState.Value.IsLoading)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Creating...</span>
+                    }
+                    else
+                    {
+                        <span>Create Loan</span>
+                    }
+                </MudButton>
+            </MudCardActions>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [Parameter] public EventCallback<bool> OnDialogClose { get; set; }
+
+    private CreateLoanModel _model = new();
+    private List<BorrowerType> _borrowerTypes = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        var borrowerTypes = await BorrowerTypeHandler.HandleAsync(new GetAllBorrowerTypesQuery());
+        _borrowerTypes = borrowerTypes.ToList();
+    }
+
+    private async Task OnValidSubmit()
+    {
+        Dispatcher.Dispatch(new CreateLoanAction(
+            _model.BorrowerName,
+            _model.BorrowerTypeId!.Value,
+            _model.ContactPerson,
+            _model.ContactEmail,
+            _model.Amount,
+            _model.InterestRate,
+            _model.TermYears,
+            _model.Purpose
+        ));
+
+        Snackbar.Add("Loan application created successfully!", Severity.Success);
+        await OnDialogClose.InvokeAsync(true);
+    }
+
+    private async Task Cancel()
+    {
+        await OnDialogClose.InvokeAsync(false);
+    }
+
+    public class CreateLoanModel
+    {
+        [Required(ErrorMessage = "Borrower name is required")]
+        [StringLength(200, ErrorMessage = "Borrower name cannot exceed 200 characters")]
+        public string BorrowerName { get; set; } = "";
+
+        [Required(ErrorMessage = "Borrower type is required")]
+        public int? BorrowerTypeId { get; set; }
+
+        [Required(ErrorMessage = "Contact person is required")]
+        [StringLength(200, ErrorMessage = "Contact person cannot exceed 200 characters")]
+        public string ContactPerson { get; set; } = "";
+
+        [Required(ErrorMessage = "Contact email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email address")]
+        [StringLength(200, ErrorMessage = "Email cannot exceed 200 characters")]
+        public string ContactEmail { get; set; } = "";
+
+        [Required(ErrorMessage = "Loan amount is required")]
+        [Range(1, double.MaxValue, ErrorMessage = "Amount must be greater than 0")]
+        public decimal Amount { get; set; }
+
+        [Required(ErrorMessage = "Interest rate is required")]
+        [Range(0, 100, ErrorMessage = "Interest rate must be between 0 and 100")]
+        public decimal InterestRate { get; set; }
+
+        [Required(ErrorMessage = "Term is required")]
+        [Range(1, 50, ErrorMessage = "Term must be between 1 and 50 years")]
+        public int TermYears { get; set; }
+
+        [Required(ErrorMessage = "Purpose is required")]
+        [StringLength(1000, MinimumLength = 10, ErrorMessage = "Purpose must be between 10 and 1000 characters")]
+        public string Purpose { get; set; } = "";
+    }
+}

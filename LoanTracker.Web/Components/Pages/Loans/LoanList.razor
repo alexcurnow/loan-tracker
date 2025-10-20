@@ -1,10 +1,12 @@
 @page "/loans"
 @using LoanTracker.Web.Store.LoanState
+@using LoanTracker.Web.Components.Dialogs
 @using System.Globalization
 @inherits Fluxor.Blazor.Web.Components.FluxorComponent
 @inject IState<LoanState> LoanState
 @inject IDispatcher Dispatcher
 @inject NavigationManager Navigation
+@inject IDialogService DialogService
 
 <PageTitle>All Loans - Loan Tracker</PageTitle>
 
@@ -41,7 +43,7 @@ else
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
                                StartIcon="@Icons.Material.Filled.Add"
-                               OnClick="@(() => Navigation.NavigateTo("/loans/create"))"
+                               OnClick="OpenCreateDialog"
                                FullWidth="true">
                         Create Loan
                     </MudButton>
@@ -86,6 +88,7 @@ else
 @code {
     private string _searchString = "";
     private LoanStatus? _statusFilter = null;
+    private IDialogReference? _currentDialog;
 
     protected override void OnInitialized()
     {
@@ -114,6 +117,29 @@ else
 
             return loans.OrderByDescending(l => l.ApplicationDate);
         }
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        var parameters = new DialogParameters
+        {
+            { "OnDialogClose", EventCallback.Factory.Create<bool>(this, HandleDialogClose) }
+        };
+
+        _currentDialog = await DialogService.ShowAsync<CreateLoanDialog>("Create New Loan Application", parameters, options);
+        await _currentDialog.Result;
+    }
+
+    private void HandleDialogClose(bool success)
+    {
+        _currentDialog?.Close();
     }
 
     private void OnRowClick(TableRowClickEventArgs<LoanDto> args)
