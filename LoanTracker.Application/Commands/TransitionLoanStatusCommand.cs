@@ -1,3 +1,4 @@
+using LoanTracker.Application.Common;
 using LoanTracker.Application.DTOs;
 using LoanTracker.Application.Interfaces;
 using LoanTracker.Domain.Enums;
@@ -12,7 +13,7 @@ public record TransitionLoanStatusCommand(
     string? ReviewerNotes = null
 );
 
-public class TransitionLoanStatusCommandHandler : ICommandHandler<TransitionLoanStatusCommand, LoanDto>
+public class TransitionLoanStatusCommandHandler : ICommandHandler<TransitionLoanStatusCommand, Result<LoanDto>>
 {
     private readonly ILoanRepository _loanRepository;
     private readonly WorkflowStateMachine _stateMachine;
@@ -23,56 +24,65 @@ public class TransitionLoanStatusCommandHandler : ICommandHandler<TransitionLoan
         _stateMachine = stateMachine;
     }
 
-    public async Task<LoanDto> HandleAsync(TransitionLoanStatusCommand command)
+    public async Task<Result<LoanDto>> HandleAsync(TransitionLoanStatusCommand command)
     {
-        var loan = await _loanRepository.GetByIdAsync(command.LoanId);
-        if (loan == null)
+        try
         {
-            throw new InvalidOperationException($"Loan with ID {command.LoanId} not found.");
+            var loan = await _loanRepository.GetByIdAsync(command.LoanId);
+            if (loan == null)
+            {
+                return Result<LoanDto>.Failure(Error.NotFound($"Loan with ID {command.LoanId} not found"));
+            }
+
+            // Validate the transition
+            if (!_stateMachine.IsValidTransition(loan.Status, command.ToStatus))
+            {
+                var errorMessage = _stateMachine.GetTransitionErrorMessage(loan.Status, command.ToStatus);
+                return Result<LoanDto>.Failure(Error.Validation(errorMessage));
+            }
+
+            // Update the loan status
+            loan.Status = command.ToStatus;
+
+            // Set decision date for terminal states
+            if (command.ToStatus == LoanStatus.Approved || command.ToStatus == LoanStatus.Denied)
+            {
+                loan.DecisionDate = DateTime.UtcNow;
+            }
+
+            // Set reviewer notes if provided
+            if (!string.IsNullOrWhiteSpace(command.ReviewerNotes))
+            {
+                loan.ReviewerNotes = command.ReviewerNotes;
+            }
+
+            var updatedLoan = await _loanRepository.UpdateAsync(loan);
+
+            var loanDto = new LoanDto
+            {
+                LoanId = updatedLoan.LoanId,
+                BorrowerName = updatedLoan.BorrowerName,
+                BorrowerTypeId = updatedLoan.BorrowerTypeId,
+                BorrowerTypeName = updatedLoan.BorrowerType?.TypeName ?? string.Empty,
+                ContactPerson = updatedLoan.ContactPerson,
+                ContactEmail = updatedLoan.ContactEmail,
+                Amount = updatedLoan.Amount,
+                InterestRate = updatedLoan.InterestRate,
+                TermYears = updatedLoan.TermYears,
+                Purpose = updatedLoan.Purpose,
+                ApplicationDate = updatedLoan.ApplicationDate,
+                Status = updatedLoan.Status,
+                DecisionDate = updatedLoan.DecisionDate,
+                ReviewerNotes = updatedLoan.ReviewerNotes,
+                CreatedAt = updatedLoan.CreatedAt,
+                UpdatedAt = updatedLoan.UpdatedAt
+            };
+
+            return Result<LoanDto>.Success(loanDto);
         }
-
-        // Validate the transition
-        if (!_stateMachine.IsValidTransition(loan.Status, command.ToStatus))
+        catch (Exception ex)
         {
-            var errorMessage = _stateMachine.GetTransitionErrorMessage(loan.Status, command.ToStatus);
-            throw new InvalidOperationException(errorMessage);
+            return Result<LoanDto>.Failure(Error.ServerError($"Failed to transition loan status: {ex.Message}"));
         }
-
-        // Update the loan status
-        loan.Status = command.ToStatus;
-
-        // Set decision date for terminal states
-        if (command.ToStatus == LoanStatus.Approved || command.ToStatus == LoanStatus.Denied)
-        {
-            loan.DecisionDate = DateTime.UtcNow;
-        }
-
-        // Set reviewer notes if provided
-        if (!string.IsNullOrWhiteSpace(command.ReviewerNotes))
-        {
-            loan.ReviewerNotes = command.ReviewerNotes;
-        }
-
-        var updatedLoan = await _loanRepository.UpdateAsync(loan);
-
-        return new LoanDto
-        {
-            LoanId = updatedLoan.LoanId,
-            BorrowerName = updatedLoan.BorrowerName,
-            BorrowerTypeId = updatedLoan.BorrowerTypeId,
-            BorrowerTypeName = updatedLoan.BorrowerType?.TypeName ?? string.Empty,
-            ContactPerson = updatedLoan.ContactPerson,
-            ContactEmail = updatedLoan.ContactEmail,
-            Amount = updatedLoan.Amount,
-            InterestRate = updatedLoan.InterestRate,
-            TermYears = updatedLoan.TermYears,
-            Purpose = updatedLoan.Purpose,
-            ApplicationDate = updatedLoan.ApplicationDate,
-            Status = updatedLoan.Status,
-            DecisionDate = updatedLoan.DecisionDate,
-            ReviewerNotes = updatedLoan.ReviewerNotes,
-            CreatedAt = updatedLoan.CreatedAt,
-            UpdatedAt = updatedLoan.UpdatedAt
-        };
     }
 }

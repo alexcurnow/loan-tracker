@@ -116,6 +116,6 @@ Thumbs.db
 appsettings.Development.json
 appsettings.Production.json
 
-certs/*.crt
-certs/*.pem
-!certs/README.md
+# SSL/TLS Certificates (for corporate proxy)
+.certs/
+!.certs/README.md

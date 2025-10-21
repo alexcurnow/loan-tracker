@@ -1,3 +1,4 @@
+using LoanTracker.Application.Common;
 using LoanTracker.Application.DTOs;
 using LoanTracker.Application.Interfaces;
 using LoanTracker.Domain.Entities;
@@ -17,7 +18,7 @@ public record CreateLoanCommand(
     string Purpose
 );
 
-public class CreateLoanCommandHandler : ICommandHandler<CreateLoanCommand, LoanDto>
+public class CreateLoanCommandHandler : ICommandHandler<CreateLoanCommand, Result<LoanDto>>
 {
     private readonly ILoanRepository _loanRepository;
 
@@ -26,45 +27,64 @@ public class CreateLoanCommandHandler : ICommandHandler<CreateLoanCommand, LoanD
         _loanRepository = loanRepository;
     }
 
-    public async Task<LoanDto> HandleAsync(CreateLoanCommand command)
+    public async Task<Result<LoanDto>> HandleAsync(CreateLoanCommand command)
     {
-        var loan = new Loan
+        try
         {
-            LoanId = Guid.NewGuid(),
-            BorrowerName = command.BorrowerName,
-            BorrowerTypeId = command.BorrowerTypeId,
-            ContactPerson = command.ContactPerson,
-            ContactEmail = command.ContactEmail,
-            Amount = command.Amount,
-            InterestRate = command.InterestRate,
-            TermYears = command.TermYears,
-            Purpose = command.Purpose,
-            ApplicationDate = DateTime.UtcNow,
-            Status = LoanStatus.Open,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+            // Validation
+            if (string.IsNullOrWhiteSpace(command.BorrowerName))
+                return Result<LoanDto>.Failure(Error.Validation("Borrower name is required"));
 
-        var createdLoan = await _loanRepository.CreateAsync(loan);
+            if (command.Amount <= 0)
+                return Result<LoanDto>.Failure(Error.Validation("Loan amount must be greater than zero"));
 
-        return new LoanDto
+            if (command.InterestRate < 0 || command.InterestRate > 100)
+                return Result<LoanDto>.Failure(Error.Validation("Interest rate must be between 0 and 100"));
+
+            var loan = new Loan
+            {
+                LoanId = Guid.NewGuid(),
+                BorrowerName = command.BorrowerName,
+                BorrowerTypeId = command.BorrowerTypeId,
+                ContactPerson = command.ContactPerson,
+                ContactEmail = command.ContactEmail,
+                Amount = command.Amount,
+                InterestRate = command.InterestRate,
+                TermYears = command.TermYears,
+                Purpose = command.Purpose,
+                ApplicationDate = DateTime.UtcNow,
+                Status = LoanStatus.Open,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            var createdLoan = await _loanRepository.CreateAsync(loan);
+
+            var loanDto = new LoanDto
+            {
+                LoanId = createdLoan.LoanId,
+                BorrowerName = createdLoan.BorrowerName,
+                BorrowerTypeId = createdLoan.BorrowerTypeId,
+                BorrowerTypeName = createdLoan.BorrowerType?.TypeName ?? string.Empty,
+                ContactPerson = createdLoan.ContactPerson,
+                ContactEmail = createdLoan.ContactEmail,
+                Amount = createdLoan.Amount,
+                InterestRate = createdLoan.InterestRate,
+                TermYears = createdLoan.TermYears,
+                Purpose = createdLoan.Purpose,
+                ApplicationDate = createdLoan.ApplicationDate,
+                Status = createdLoan.Status,
+                DecisionDate = createdLoan.DecisionDate,
+                ReviewerNotes = createdLoan.ReviewerNotes,
+                CreatedAt = createdLoan.CreatedAt,
+                UpdatedAt = createdLoan.UpdatedAt
+            };
+
+            return Result<LoanDto>.Success(loanDto);
+        }
+        catch (Exception ex)
         {
-            LoanId = createdLoan.LoanId,
-            BorrowerName = createdLoan.BorrowerName,
-            BorrowerTypeId = createdLoan.BorrowerTypeId,
-            BorrowerTypeName = createdLoan.BorrowerType?.TypeName ?? string.Empty,
-            ContactPerson = createdLoan.ContactPerson,
-            ContactEmail = createdLoan.ContactEmail,
-            Amount = createdLoan.Amount,
-            InterestRate = createdLoan.InterestRate,
-            TermYears = createdLoan.TermYears,
-            Purpose = createdLoan.Purpose,
-            ApplicationDate = createdLoan.ApplicationDate,
-            Status = createdLoan.Status,
-            DecisionDate = createdLoan.DecisionDate,
-            ReviewerNotes = createdLoan.ReviewerNotes,
-            CreatedAt = createdLoan.CreatedAt,
-            UpdatedAt = createdLoan.UpdatedAt
-        };
+            return Result<LoanDto>.Failure(Error.ServerError($"Failed to create loan: {ex.Message}"));
+        }
     }
 }
