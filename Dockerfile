@@ -2,8 +2,8 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Trust corporate CA(s) ¿ optional (safe when none present)
-COPY certs/ /usr/local/share/ca-certificates/
+# Trust corporate CA(s) ï¿½ optional (safe when none present)
+COPY .certs/ /usr/local/share/ca-certificates/
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
  && update-ca-certificates || true \
  && rm -rf /var/lib/apt/lists/*

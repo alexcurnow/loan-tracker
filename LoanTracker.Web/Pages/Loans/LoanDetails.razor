@@ -145,12 +145,6 @@ else
     </MudGrid>
 }
 
-@if (LoanState.Value.ErrorMessage != null)
-{
-    Snackbar.Add(LoanState.Value.ErrorMessage, Severity.Error);
-    Dispatcher.Dispatch(new ClearErrorAction());
-}
-
 @code {
     [Parameter]
     public Guid LoanId { get; set; }

@@ -42,9 +42,9 @@ builder.Services.AddScoped<IBorrowerTypeRepository, BorrowerTypeRepository>();
 builder.Services.AddScoped<WorkflowStateMachine>();
 
 // Add command handlers
-builder.Services.AddScoped<ICommandHandler<CreateLoanCommand, LoanTracker.Application.DTOs.LoanDto>, CreateLoanCommandHandler>();
+builder.Services.AddScoped<ICommandHandler<CreateLoanCommand, LoanTracker.Application.Common.Result<LoanTracker.Application.DTOs.LoanDto>>, CreateLoanCommandHandler>();
 builder.Services.AddScoped<ICommandHandler<UpdateLoanCommand, LoanTracker.Application.DTOs.LoanDto>, UpdateLoanCommandHandler>();
-builder.Services.AddScoped<ICommandHandler<TransitionLoanStatusCommand, LoanTracker.Application.DTOs.LoanDto>, TransitionLoanStatusCommandHandler>();
+builder.Services.AddScoped<ICommandHandler<TransitionLoanStatusCommand, LoanTracker.Application.Common.Result<LoanTracker.Application.DTOs.LoanDto>>, TransitionLoanStatusCommandHandler>();
 
 // Add query handlers
 builder.Services.AddScoped<IQueryHandler<GetAllLoansQuery, IEnumerable<LoanTracker.Application.DTOs.LoanDto>>, GetAllLoansQueryHandler>();
