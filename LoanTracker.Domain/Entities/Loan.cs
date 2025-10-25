@@ -1,4 +1,5 @@
 using LoanTracker.Domain.Enums;
+using LoanTracker.Domain.ValueObjects;
 
 namespace LoanTracker.Domain.Entities;
 
@@ -15,11 +16,20 @@ public class Loan
     public string Purpose { get; set; } = string.Empty;
     public DateTime ApplicationDate { get; set; }
     public LoanStatus Status { get; set; }
+    public int DueDay { get; set; } = 20;  // Day of month payments/accruals due (default 20th)
     public DateTime? DecisionDate { get; set; }
     public string? ReviewerNotes { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
-    // Navigation property
+    // Navigation properties
     public BorrowerType BorrowerType { get; set; } = null!;
+    public ICollection<Project> Projects { get; set; } = new List<Project>();
+
+    // Domain properties using Value Objects (computed, not stored)
+    public Money LoanAmount => Money.Dollars(Amount);
+    public ValueObjects.InterestRate Rate => ValueObjects.InterestRate.FromPercentage(InterestRate);
+
+    // Helper property: Date interest accruals generate (15 days before due day)
+    public int AccrualGenerationDay => DueDay - 15 > 0 ? DueDay - 15 : DueDay - 15 + 30;
 }

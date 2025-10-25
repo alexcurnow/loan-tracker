@@ -1,0 +1,96 @@
+@using LoanTracker.Web.Store.ProjectState
+@using System.Globalization
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@inject IState<ProjectState> ProjectState
+@inject IDialogService DialogService
+@inject IDispatcher Dispatcher
+
+<div class="mb-4">
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenRecordDisbursementDialog" StartIcon="@Icons.Material.Filled.Add">
+        Record Disbursement
+    </MudButton>
+</div>
+
+@if (ProjectState.Value.IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+}
+else if (!ProjectState.Value.Disbursements.Any())
+{
+    <MudAlert Severity="Severity.Info">No disbursements recorded for this loan.</MudAlert>
+}
+else
+{
+    <MudTable Items="@ProjectState.Value.Disbursements.OrderByDescending(d => d.DisbursementDate)" Hover="true" Striped="true" Dense="true">
+        <HeaderContent>
+            <MudTh>Project</MudTh>
+            <MudTh>Amount</MudTh>
+            <MudTh>Disbursement Date</MudTh>
+            <MudTh>Recipient</MudTh>
+            <MudTh>Details</MudTh>
+            <MudTh>Recorded</MudTh>
+            <MudTh>Status</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Project">
+                <MudText Typo="Typo.body2"><strong>@context.ProjectName</strong></MudText>
+            </MudTd>
+            <MudTd DataLabel="Amount">
+                <MudText Typo="Typo.body2"><strong>@context.Amount.ToString("C", CultureInfo.GetCultureInfo("en-US"))</strong></MudText>
+            </MudTd>
+            <MudTd DataLabel="Disbursement Date">
+                @context.DisbursementDate.ToString("MMM dd, yyyy")
+            </MudTd>
+            <MudTd DataLabel="Recipient">
+                @context.RecipientName
+            </MudTd>
+            <MudTd DataLabel="Details">
+                <MudText Typo="Typo.body2" Class="text-truncate" Style="max-width: 200px;">@context.RecipientDetails</MudText>
+            </MudTd>
+            <MudTd DataLabel="Recorded">
+                @context.CreatedAt.ToString("MMM dd, yyyy")
+            </MudTd>
+            <MudTd DataLabel="Status">
+                @if (context.IsBackdated)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning">Backdated</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success">Current</MudChip>
+                }
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    [Parameter]
+    public Guid LoanId { get; set; }
+
+    private IDialogReference? _currentDialog;
+
+    private async Task OpenRecordDisbursementDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            { "LoanId", LoanId },
+            { "OnDialogClose", EventCallback.Factory.Create<bool>(this, HandleDialogClose) }
+        };
+
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        _currentDialog = await DialogService.ShowAsync<RecordDisbursementDialog>("Record Disbursement", parameters, options);
+        await _currentDialog.Result;
+    }
+
+    private void HandleDialogClose(bool success)
+    {
+        _currentDialog?.Close();
+    }
+}

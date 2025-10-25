@@ -1,0 +1,125 @@
+@using LoanTracker.Web.Store.ProjectState
+@using System.ComponentModel.DataAnnotations
+@using MudBlazor
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@inject IState<ProjectState> ProjectState
+@inject IDispatcher Dispatcher
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Record Disbursement</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="@_isValid">
+            <MudStack Spacing="3">
+                <MudSelect T="Guid?" @bind-Value="_model.ProjectId" Label="Project" Required="true" RequiredError="Project is required" Placeholder="Select a Project">
+                    @foreach (var project in ProjectState.Value.Projects)
+                    {
+                        <MudSelectItem T="Guid?" Value="@project.ProjectId">@project.ProjectName</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudNumericField @bind-Value="_model.Amount"
+                                 Label="Amount"
+                                 Required="true"
+                                 RequiredError="Amount is required"
+                                 Min="0.01m"
+                                 Format="N2"
+                                 Adornment="Adornment.Start"
+                                 AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+
+                <MudDatePicker @bind-Date="_disbursementDate"
+                               Label="Disbursement Date"
+                               Required="true"
+                               RequiredError="Disbursement date is required"
+                               MaxDate="DateTime.UtcNow.Date"
+                               HelperText="You can backdate disbursements (select a past date)" />
+
+                <MudTextField @bind-Value="_model.RecipientName"
+                              Label="Recipient Name"
+                              Required="true"
+                              RequiredError="Recipient name is required"
+                              MaxLength="200" />
+
+                <MudTextField @bind-Value="_model.RecipientDetails"
+                              Label="Recipient Details / Notes"
+                              Lines="3"
+                              MaxLength="1000" />
+
+                @if (_disbursementDate.HasValue && _disbursementDate.Value < DateTime.UtcNow.Date)
+                {
+                    <MudAlert Severity="Severity.Warning" Dense="true">
+                        <strong>Backdated Disbursement:</strong> This disbursement will be recorded with a date of <strong>@_disbursementDate.Value.ToString("MMM dd, yyyy")</strong>.
+                        Interest calculations will be recalculated based on this date.
+                    </MudAlert>
+                }
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@(!_isValid)">
+            Record Disbursement
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public EventCallback<bool> OnDialogClose { get; set; }
+
+    [Parameter]
+    public Guid LoanId { get; set; }
+
+    private MudForm? _form;
+    private bool _isValid;
+    private DisbursementFormModel _model = new();
+    private DateTime? _disbursementDate = DateTime.UtcNow.Date;
+
+    private async Task Cancel()
+    {
+        await OnDialogClose.InvokeAsync(false);
+    }
+
+    private async Task Submit()
+    {
+        if (_form != null)
+        {
+            await _form.Validate();
+
+            if (_isValid && _disbursementDate.HasValue && _model.ProjectId.HasValue)
+            {
+                // Ensure the date is UTC for PostgreSQL
+                var disbursementDateUtc = DateTime.SpecifyKind(_disbursementDate.Value, DateTimeKind.Utc);
+
+                Dispatcher.Dispatch(new IssueDisbursementAction(
+                    ProjectId: _model.ProjectId.Value,
+                    Amount: _model.Amount,
+                    Currency: "USD",
+                    DisbursementDate: disbursementDateUtc,
+                    RecipientName: _model.RecipientName,
+                    RecipientDetails: _model.RecipientDetails ?? string.Empty
+                ));
+
+                await OnDialogClose.InvokeAsync(true);
+            }
+        }
+    }
+
+    private class DisbursementFormModel
+    {
+        [Required]
+        public Guid? ProjectId { get; set; }
+
+        [Required]
+        [Range(0.01, double.MaxValue)]
+        public decimal Amount { get; set; }
+
+        [Required]
+        [MaxLength(200)]
+        public string RecipientName { get; set; } = string.Empty;
+
+        [MaxLength(1000)]
+        public string? RecipientDetails { get; set; }
+    }
+}

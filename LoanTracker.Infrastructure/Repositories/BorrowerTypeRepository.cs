@@ -7,16 +7,17 @@ namespace LoanTracker.Infrastructure.Repositories;
 
 public class BorrowerTypeRepository : IBorrowerTypeRepository
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
 
-    public BorrowerTypeRepository(ApplicationDbContext context)
+    public BorrowerTypeRepository(IDbContextFactory<ApplicationDbContext> contextFactory)
     {
-        _context = context;
+        _contextFactory = contextFactory;
     }
 
     public async Task<IEnumerable<BorrowerType>> GetAllAsync()
     {
-        return await _context.BorrowerTypes
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        return await context.BorrowerTypes
             .OrderBy(bt => bt.TypeName)
             .ToListAsync();
     }

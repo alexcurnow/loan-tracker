@@ -12,6 +12,8 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Loan> Loans => Set<Loan>();
     public DbSet<BorrowerType> BorrowerTypes => Set<BorrowerType>();
+    public DbSet<Project> Projects => Set<Project>();
+    public DbSet<Disbursement> Disbursements => Set<Disbursement>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

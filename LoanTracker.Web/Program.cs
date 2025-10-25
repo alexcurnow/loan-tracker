@@ -10,6 +10,7 @@ using LoanTracker.Infrastructure.Repositories;
 using LoanTracker.Web.Components;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
+using Marten;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,30 +28,46 @@ builder.Services.AddFluxor(options =>
 });
 
 // Add DbContext
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? "Host=localhost;Database=loantracker;Username=postgres;Password=postgres"
-    )
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? "Host=localhost;Database=loantracker;Username=postgres;Password=postgres";
+
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString)
 );
+
+// Also add DbContext for migration purposes
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString)
+);
+
+// Add Marten for Event Sourcing
+builder.Services.AddMarten(connectionString);
 
 // Add repositories
 builder.Services.AddScoped<ILoanRepository, LoanRepository>();
 builder.Services.AddScoped<IBorrowerTypeRepository, BorrowerTypeRepository>();
+builder.Services.AddScoped<IProjectRepository, LoanTracker.Infrastructure.Repositories.ProjectRepository>();
+builder.Services.AddScoped<IDisbursementRepository, LoanTracker.Infrastructure.Repositories.DisbursementRepository>();
 
 // Add services
 builder.Services.AddScoped<WorkflowStateMachine>();
+builder.Services.AddScoped<InterestCalculationService>();
+builder.Services.AddScoped<IEventStore, LoanTracker.Infrastructure.Services.MartenEventStore>();
 
 // Add command handlers
 builder.Services.AddScoped<ICommandHandler<CreateLoanCommand, LoanTracker.Application.Common.Result<LoanTracker.Application.DTOs.LoanDto>>, CreateLoanCommandHandler>();
 builder.Services.AddScoped<ICommandHandler<UpdateLoanCommand, LoanTracker.Application.DTOs.LoanDto>, UpdateLoanCommandHandler>();
 builder.Services.AddScoped<ICommandHandler<TransitionLoanStatusCommand, LoanTracker.Application.Common.Result<LoanTracker.Application.DTOs.LoanDto>>, TransitionLoanStatusCommandHandler>();
+builder.Services.AddScoped<ICommandHandler<IssueDisbursementCommand, LoanTracker.Application.Common.Result<LoanTracker.Application.Commands.DisbursementDto>>, IssueDisbursementCommandHandler>();
 
 // Add query handlers
 builder.Services.AddScoped<IQueryHandler<GetAllLoansQuery, IEnumerable<LoanTracker.Application.DTOs.LoanDto>>, GetAllLoansQueryHandler>();
 builder.Services.AddScoped<IQueryHandler<GetLoanByIdQuery, LoanTracker.Application.DTOs.LoanDto?>, GetLoanByIdQueryHandler>();
 builder.Services.AddScoped<IQueryHandler<GetLoansByStatusQuery, IEnumerable<LoanTracker.Application.DTOs.LoanDto>>, GetLoansByStatusQueryHandler>();
 builder.Services.AddScoped<IQueryHandler<GetAllBorrowerTypesQuery, IEnumerable<BorrowerType>>, GetAllBorrowerTypesQueryHandler>();
+builder.Services.AddScoped<IQueryHandler<GetLoanInterestAccrualsQuery, IEnumerable<LoanTracker.Application.Queries.InterestAccrualDto>>, GetLoanInterestAccrualsQueryHandler>();
+builder.Services.AddScoped<IQueryHandler<GetProjectsByLoanIdQuery, IEnumerable<LoanTracker.Application.Queries.ProjectDto>>, GetProjectsByLoanIdQueryHandler>();
+builder.Services.AddScoped<IQueryHandler<GetDisbursementsByLoanIdQuery, IEnumerable<LoanTracker.Application.Queries.DisbursementDto>>, GetDisbursementsByLoanIdQueryHandler>();
 
 var app = builder.Build();
 

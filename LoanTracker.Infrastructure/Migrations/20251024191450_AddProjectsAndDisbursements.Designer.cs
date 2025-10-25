@@ -3,6 +3,7 @@ using System;
 using LoanTracker.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LoanTracker.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251024191450_AddProjectsAndDisbursements")]
+    partial class AddProjectsAndDisbursements
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -130,52 +133,6 @@ namespace LoanTracker.Infrastructure.Migrations
                         .HasDatabaseName("IX_Disbursements_ProjectId");
 
                     b.ToTable("Disbursements", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            DisbursementId = new Guid("dddddddd-dddd-dddd-dddd-dddddddddd01"),
-                            AmountCurrency = "USD",
-                            AmountValue = 200000m,
-                            CreatedAt = new DateTime(2024, 1, 20, 12, 0, 0, 0, DateTimeKind.Utc),
-                            DisbursementDate = new DateTime(2024, 1, 15, 12, 0, 0, 0, DateTimeKind.Utc),
-                            ProjectId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-                            RecipientDetails = "Initial payment for road repairs phase 1 - Main St and Broadway",
-                            RecipientName = "Metro Road Construction LLC"
-                        },
-                        new
-                        {
-                            DisbursementId = new Guid("dddddddd-dddd-dddd-dddd-dddddddddd02"),
-                            AmountCurrency = "USD",
-                            AmountValue = 100000m,
-                            CreatedAt = new DateTime(2024, 2, 8, 12, 0, 0, 0, DateTimeKind.Utc),
-                            DisbursementDate = new DateTime(2024, 2, 5, 12, 0, 0, 0, DateTimeKind.Utc),
-                            ProjectId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-                            RecipientDetails = "Second payment for road repairs phase 2 - West End Ave",
-                            RecipientName = "Metro Road Construction LLC"
-                        },
-                        new
-                        {
-                            DisbursementId = new Guid("dddddddd-dddd-dddd-dddd-dddddddddd03"),
-                            AmountCurrency = "USD",
-                            AmountValue = 150000m,
-                            CreatedAt = new DateTime(2024, 2, 10, 12, 0, 0, 0, DateTimeKind.Utc),
-                            DisbursementDate = new DateTime(2024, 2, 10, 12, 0, 0, 0, DateTimeKind.Utc),
-                            ProjectId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaabbb"),
-                            RecipientDetails = "Initial payment for structural reinforcement of Jefferson St Bridge",
-                            RecipientName = "Cumberland Bridge Engineering"
-                        },
-                        new
-                        {
-                            DisbursementId = new Guid("dddddddd-dddd-dddd-dddd-dddddddddd04"),
-                            AmountCurrency = "USD",
-                            AmountValue = 250000m,
-                            CreatedAt = new DateTime(2024, 2, 15, 12, 0, 0, 0, DateTimeKind.Utc),
-                            DisbursementDate = new DateTime(2024, 2, 15, 12, 0, 0, 0, DateTimeKind.Utc),
-                            ProjectId = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-                            RecipientDetails = "Foundation and site preparation for new classroom wing",
-                            RecipientName = "Shelby Construction Group"
-                        });
                 });
 
             modelBuilder.Entity("LoanTracker.Domain.Entities.Loan", b =>
@@ -251,59 +208,53 @@ namespace LoanTracker.Infrastructure.Migrations
                         new
                         {
                             LoanId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            Amount = 700000m,
-                            ApplicationDate = new DateTime(2024, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
-                            BorrowerName = "Metro Nashville Infrastructure",
+                            Amount = 1500000m,
+                            ApplicationDate = new DateTime(2025, 10, 9, 12, 0, 0, 0, DateTimeKind.Utc),
+                            BorrowerName = "City of Nashville",
                             BorrowerTypeId = 1,
                             ContactEmail = "jsmith@nashville.gov",
                             ContactPerson = "John Smith",
-                            CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, 0, DateTimeKind.Utc),
-                            DecisionDate = new DateTime(2024, 1, 5, 12, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 10, 9, 12, 0, 0, 0, DateTimeKind.Utc),
                             DueDay = 20,
                             InterestRate = 3.5m,
-                            Purpose = "Road repairs and bridge upgrades for city infrastructure",
-                            ReviewerNotes = "Critical infrastructure needs. Approved for phased construction.",
-                            Status = "Construction",
+                            Purpose = "Infrastructure improvements for downtown area",
+                            Status = "Open",
                             TermYears = 15,
-                            UpdatedAt = new DateTime(2024, 2, 10, 12, 0, 0, 0, DateTimeKind.Utc)
+                            UpdatedAt = new DateTime(2025, 10, 9, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             LoanId = new Guid("11111111-1111-1111-1111-111111111112"),
-                            Amount = 500000m,
-                            ApplicationDate = new DateTime(2024, 2, 1, 12, 0, 0, 0, DateTimeKind.Utc),
-                            BorrowerName = "Shelby County Schools",
-                            BorrowerTypeId = 3,
+                            Amount = 2000000m,
+                            ApplicationDate = new DateTime(2025, 10, 11, 12, 0, 0, 0, DateTimeKind.Utc),
+                            BorrowerName = "Shelby County",
+                            BorrowerTypeId = 2,
                             ContactEmail = "mjohnson@shelbycounty.gov",
                             ContactPerson = "Mary Johnson",
-                            CreatedAt = new DateTime(2024, 2, 1, 12, 0, 0, 0, DateTimeKind.Utc),
-                            DecisionDate = new DateTime(2024, 2, 5, 12, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 10, 11, 12, 0, 0, 0, DateTimeKind.Utc),
                             DueDay = 20,
-                            InterestRate = 2.5m,
-                            Purpose = "New classroom wing construction",
-                            ReviewerNotes = "Addresses critical overcrowding. Strong enrollment projections.",
-                            Status = "Construction",
+                            InterestRate = 3.75m,
+                            Purpose = "New county courthouse construction",
+                            Status = "Open",
                             TermYears = 20,
-                            UpdatedAt = new DateTime(2024, 2, 15, 12, 0, 0, 0, DateTimeKind.Utc)
+                            UpdatedAt = new DateTime(2025, 10, 11, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             LoanId = new Guid("11111111-1111-1111-1111-111111111113"),
-                            Amount = 600000m,
-                            ApplicationDate = new DateTime(2024, 3, 1, 12, 0, 0, 0, DateTimeKind.Utc),
-                            BorrowerName = "Knox County Fire Department",
-                            BorrowerTypeId = 2,
-                            ContactEmail = "rwilliams@knoxcounty.gov",
+                            Amount = 3000000m,
+                            ApplicationDate = new DateTime(2025, 10, 14, 12, 0, 0, 0, DateTimeKind.Utc),
+                            BorrowerName = "Knox County School District",
+                            BorrowerTypeId = 3,
+                            ContactEmail = "rwilliams@knoxschools.org",
                             ContactPerson = "Robert Williams",
-                            CreatedAt = new DateTime(2024, 3, 1, 12, 0, 0, 0, DateTimeKind.Utc),
-                            DecisionDate = new DateTime(2024, 3, 10, 12, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 10, 14, 12, 0, 0, 0, DateTimeKind.Utc),
                             DueDay = 20,
-                            InterestRate = 3.0m,
-                            Purpose = "New fire station and equipment",
-                            ReviewerNotes = "Approved. Waiting for contractor selection before first disbursement.",
-                            Status = "Approved",
-                            TermYears = 15,
-                            UpdatedAt = new DateTime(2024, 3, 10, 12, 0, 0, 0, DateTimeKind.Utc)
+                            InterestRate = 2.5m,
+                            Purpose = "New elementary school construction",
+                            Status = "Open",
+                            TermYears = 25,
+                            UpdatedAt = new DateTime(2025, 10, 14, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -444,19 +395,19 @@ namespace LoanTracker.Infrastructure.Migrations
                         new
                         {
                             LoanId = new Guid("33333333-3333-3333-3333-333333333333"),
-                            Amount = 400000m,
-                            ApplicationDate = new DateTime(2024, 4, 1, 12, 0, 0, 0, DateTimeKind.Utc),
-                            BorrowerName = "Davidson County Library",
+                            Amount = 900000m,
+                            ApplicationDate = new DateTime(2025, 9, 14, 12, 0, 0, 0, DateTimeKind.Utc),
+                            BorrowerName = "Davidson County",
                             BorrowerTypeId = 2,
                             ContactEmail = "jtaylor@nashville.gov",
                             ContactPerson = "Jessica Taylor",
-                            CreatedAt = new DateTime(2024, 4, 1, 12, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 9, 14, 12, 0, 0, 0, DateTimeKind.Utc),
                             DueDay = 20,
                             InterestRate = 3.75m,
-                            Purpose = "Library system modernization and technology upgrades",
-                            Status = "AwaitingReview",
+                            Purpose = "County library system modernization",
+                            Status = "ApprovalPending",
                             TermYears = 12,
-                            UpdatedAt = new DateTime(2024, 4, 5, 12, 0, 0, 0, DateTimeKind.Utc)
+                            UpdatedAt = new DateTime(2025, 9, 24, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
@@ -654,41 +605,6 @@ namespace LoanTracker.Infrastructure.Migrations
                     b.HasIndex("LoanId");
 
                     b.ToTable("Projects", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            ProjectId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-                            BudgetAmount = 400000m,
-                            BudgetCurrency = "USD",
-                            CreatedAt = new DateTime(2024, 1, 10, 12, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Repair and repaving of major downtown thoroughfares",
-                            LoanId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            ProjectName = "Road Repairs",
-                            UpdatedAt = new DateTime(2024, 1, 10, 12, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            ProjectId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaabbb"),
-                            BudgetAmount = 300000m,
-                            BudgetCurrency = "USD",
-                            CreatedAt = new DateTime(2024, 1, 10, 12, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Structural reinforcement and safety improvements for city bridges",
-                            LoanId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            ProjectName = "Bridge Upgrades",
-                            UpdatedAt = new DateTime(2024, 1, 10, 12, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            ProjectId = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-                            BudgetAmount = 500000m,
-                            BudgetCurrency = "USD",
-                            CreatedAt = new DateTime(2024, 2, 5, 12, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Construction of new classroom wing to address overcrowding",
-                            LoanId = new Guid("11111111-1111-1111-1111-111111111112"),
-                            ProjectName = "New Classroom Wing",
-                            UpdatedAt = new DateTime(2024, 2, 5, 12, 0, 0, 0, DateTimeKind.Utc)
-                        });
                 });
 
             modelBuilder.Entity("LoanTracker.Domain.Entities.Disbursement", b =>

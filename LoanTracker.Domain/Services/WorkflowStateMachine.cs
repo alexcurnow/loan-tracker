@@ -9,8 +9,10 @@ public class WorkflowStateMachine
         { LoanStatus.Open, new List<LoanStatus> { LoanStatus.AwaitingReview } },
         { LoanStatus.AwaitingReview, new List<LoanStatus> { LoanStatus.Open, LoanStatus.ApprovalPending } },
         { LoanStatus.ApprovalPending, new List<LoanStatus> { LoanStatus.AwaitingReview, LoanStatus.Approved, LoanStatus.Denied } },
-        { LoanStatus.Approved, new List<LoanStatus>() },  // Terminal state
-        { LoanStatus.Denied, new List<LoanStatus>() }      // Terminal state
+        { LoanStatus.Approved, new List<LoanStatus> { LoanStatus.Construction } },  // Can move to Construction when first disbursement
+        { LoanStatus.Construction, new List<LoanStatus> { LoanStatus.Active } },     // Can move to Active when fully disbursed
+        { LoanStatus.Active, new List<LoanStatus>() },      // Terminal state (in repayment)
+        { LoanStatus.Denied, new List<LoanStatus>() }       // Terminal state
     };
 
     public bool IsValidTransition(LoanStatus fromStatus, LoanStatus toStatus)
@@ -32,7 +34,8 @@ public class WorkflowStateMachine
 
     public string GetTransitionErrorMessage(LoanStatus fromStatus, LoanStatus toStatus)
     {
-        if (fromStatus == LoanStatus.Approved || fromStatus == LoanStatus.Denied)
+        // Terminal states
+        if (fromStatus == LoanStatus.Active || fromStatus == LoanStatus.Denied)
         {
             return $"Cannot transition from {fromStatus} status. This is a terminal state.";
         }

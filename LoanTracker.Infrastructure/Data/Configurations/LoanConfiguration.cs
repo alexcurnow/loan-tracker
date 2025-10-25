@@ -65,54 +65,63 @@ public class LoanConfiguration : IEntityTypeConfiguration<Loan>
 
         var sampleLoans = new List<Loan>
         {
-            // Open loans (5)
+            // Construction loans (2) - These have projects and disbursements
             new Loan
             {
                 LoanId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-                BorrowerName = "City of Nashville",
+                BorrowerName = "Metro Nashville Infrastructure",
                 BorrowerTypeId = 1,
                 ContactPerson = "John Smith",
                 ContactEmail = "jsmith@nashville.gov",
-                Amount = 1500000m,
+                Amount = 700000m,
                 InterestRate = 3.5m,
                 TermYears = 15,
-                Purpose = "Infrastructure improvements for downtown area",
-                ApplicationDate = new DateTime(2025, 10, 9, 12, 0, 0, DateTimeKind.Utc),
-                Status = LoanStatus.Open,
-                CreatedAt = new DateTime(2025, 10, 9, 12, 0, 0, DateTimeKind.Utc),
-                UpdatedAt = new DateTime(2025, 10, 9, 12, 0, 0, DateTimeKind.Utc)
+                Purpose = "Road repairs and bridge upgrades for city infrastructure",
+                ApplicationDate = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc),
+                Status = LoanStatus.Construction,
+                DueDay = 20,
+                DecisionDate = new DateTime(2024, 1, 5, 12, 0, 0, DateTimeKind.Utc),
+                ReviewerNotes = "Critical infrastructure needs. Approved for phased construction.",
+                CreatedAt = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2024, 2, 10, 12, 0, 0, DateTimeKind.Utc)
             },
             new Loan
             {
                 LoanId = Guid.Parse("11111111-1111-1111-1111-111111111112"),
-                BorrowerName = "Shelby County",
-                BorrowerTypeId = 2,
+                BorrowerName = "Shelby County Schools",
+                BorrowerTypeId = 3,
                 ContactPerson = "Mary Johnson",
                 ContactEmail = "mjohnson@shelbycounty.gov",
-                Amount = 2000000m,
-                InterestRate = 3.75m,
+                Amount = 500000m,
+                InterestRate = 2.5m,
                 TermYears = 20,
-                Purpose = "New county courthouse construction",
-                ApplicationDate = new DateTime(2025, 10, 11, 12, 0, 0, DateTimeKind.Utc),
-                Status = LoanStatus.Open,
-                CreatedAt = new DateTime(2025, 10, 11, 12, 0, 0, DateTimeKind.Utc),
-                UpdatedAt = new DateTime(2025, 10, 11, 12, 0, 0, DateTimeKind.Utc)
+                Purpose = "New classroom wing construction",
+                ApplicationDate = new DateTime(2024, 2, 1, 12, 0, 0, DateTimeKind.Utc),
+                Status = LoanStatus.Construction,
+                DueDay = 20,
+                DecisionDate = new DateTime(2024, 2, 5, 12, 0, 0, DateTimeKind.Utc),
+                ReviewerNotes = "Addresses critical overcrowding. Strong enrollment projections.",
+                CreatedAt = new DateTime(2024, 2, 1, 12, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2024, 2, 15, 12, 0, 0, DateTimeKind.Utc)
             },
             new Loan
             {
                 LoanId = Guid.Parse("11111111-1111-1111-1111-111111111113"),
-                BorrowerName = "Knox County School District",
-                BorrowerTypeId = 3,
+                BorrowerName = "Knox County Fire Department",
+                BorrowerTypeId = 2,
                 ContactPerson = "Robert Williams",
-                ContactEmail = "rwilliams@knoxschools.org",
-                Amount = 3000000m,
-                InterestRate = 2.5m,
-                TermYears = 25,
-                Purpose = "New elementary school construction",
-                ApplicationDate = new DateTime(2025, 10, 14, 12, 0, 0, DateTimeKind.Utc),
-                Status = LoanStatus.Open,
-                CreatedAt = new DateTime(2025, 10, 14, 12, 0, 0, DateTimeKind.Utc),
-                UpdatedAt = new DateTime(2025, 10, 14, 12, 0, 0, DateTimeKind.Utc)
+                ContactEmail = "rwilliams@knoxcounty.gov",
+                Amount = 600000m,
+                InterestRate = 3.0m,
+                TermYears = 15,
+                Purpose = "New fire station and equipment",
+                ApplicationDate = new DateTime(2024, 3, 1, 12, 0, 0, DateTimeKind.Utc),
+                Status = LoanStatus.Approved,
+                DueDay = 20,
+                DecisionDate = new DateTime(2024, 3, 10, 12, 0, 0, DateTimeKind.Utc),
+                ReviewerNotes = "Approved. Waiting for contractor selection before first disbursement.",
+                CreatedAt = new DateTime(2024, 3, 1, 12, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2024, 3, 10, 12, 0, 0, DateTimeKind.Utc)
             },
             new Loan
             {
@@ -249,18 +258,19 @@ public class LoanConfiguration : IEntityTypeConfiguration<Loan>
             new Loan
             {
                 LoanId = Guid.Parse("33333333-3333-3333-3333-333333333333"),
-                BorrowerName = "Davidson County",
+                BorrowerName = "Davidson County Library",
                 BorrowerTypeId = 2,
                 ContactPerson = "Jessica Taylor",
                 ContactEmail = "jtaylor@nashville.gov",
-                Amount = 900000m,
+                Amount = 400000m,
                 InterestRate = 3.75m,
                 TermYears = 12,
-                Purpose = "County library system modernization",
-                ApplicationDate = new DateTime(2025, 9, 14, 12, 0, 0, DateTimeKind.Utc),
-                Status = LoanStatus.ApprovalPending,
-                CreatedAt = new DateTime(2025, 9, 14, 12, 0, 0, DateTimeKind.Utc),
-                UpdatedAt = new DateTime(2025, 9, 24, 12, 0, 0, DateTimeKind.Utc)
+                Purpose = "Library system modernization and technology upgrades",
+                ApplicationDate = new DateTime(2024, 4, 1, 12, 0, 0, DateTimeKind.Utc),
+                Status = LoanStatus.AwaitingReview,
+                DueDay = 20,
+                CreatedAt = new DateTime(2024, 4, 1, 12, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2024, 4, 5, 12, 0, 0, DateTimeKind.Utc)
             },
 
             // Approved loans (5)

@@ -1,11 +1,9 @@
 @page "/loans/{LoanId:guid}"
 @using LoanTracker.Web.Store.LoanState
-@using LoanTracker.Web.Store.ProjectState
 @using LoanTracker.Domain.Services
 @using System.Globalization
 @inherits Fluxor.Blazor.Web.Components.FluxorComponent
 @inject IState<LoanState> LoanState
-@inject IState<ProjectState> ProjectState
 @inject IDispatcher Dispatcher
 @inject NavigationManager Navigation
 @inject IDialogService DialogService
@@ -133,23 +131,15 @@ else
                             </MudStack>
                         </MudItem>
                     }
+                    else if (loan.Status == LoanStatus.Approved || loan.Status == LoanStatus.Denied)
+                    {
+                        <MudItem xs="12">
+                            <MudAlert Severity="Severity.Info" Class="mt-4">
+                                This loan is in a terminal state. No further transitions are allowed.
+                            </MudAlert>
+                        </MudItem>
+                    }
                 </MudGrid>
-            </MudPaper>
-        </MudItem>
-
-        <MudItem xs="12">
-            <MudPaper Class="pa-4">
-                <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
-                    <MudTabPanel Text="Projects">
-                        <ProjectsTab LoanId="@LoanId" />
-                    </MudTabPanel>
-                    <MudTabPanel Text="Disbursements">
-                        <DisbursementsTab LoanId="@LoanId" />
-                    </MudTabPanel>
-                    <MudTabPanel Text="Interest Accruals">
-                        <InterestAccrualsTab LoanId="@LoanId" />
-                    </MudTabPanel>
-                </MudTabs>
             </MudPaper>
         </MudItem>
     </MudGrid>
@@ -171,17 +161,14 @@ else
             new BreadcrumbItem("Details", href: null, disabled: true)
         };
         Dispatcher.Dispatch(new LoadLoanByIdAction(LoanId));
-
-        // Load project-related data
-        Dispatcher.Dispatch(new LoadProjectsForLoanAction(LoanId));
-        Dispatcher.Dispatch(new LoadDisbursementsForLoanAction(LoanId));
-        Dispatcher.Dispatch(new LoadInterestAccrualsForLoanAction(LoanId));
     }
 
     private void TransitionLoan(LoanStatus toStatus)
     {
         string? reviewerNotes = null;
 
+        // For now, we'll skip the dialog and just transition
+        // In a production app, you'd want to collect reviewer notes for Approved/Denied states
         if (toStatus == LoanStatus.Approved)
         {
             reviewerNotes = $"Approved on {DateTime.Now:MMM dd, yyyy}";
@@ -203,8 +190,6 @@ else
             LoanStatus.AwaitingReview => Color.Info,
             LoanStatus.ApprovalPending => Color.Warning,
             LoanStatus.Approved => Color.Success,
-            LoanStatus.Construction => Color.Primary,
-            LoanStatus.Active => Color.Secondary,
             LoanStatus.Denied => Color.Error,
             _ => Color.Default
         };
@@ -218,7 +203,6 @@ else
             LoanStatus.AwaitingReview => Color.Info,
             LoanStatus.ApprovalPending => Color.Warning,
             LoanStatus.Approved => Color.Success,
-            LoanStatus.Construction => Color.Primary,
             LoanStatus.Denied => Color.Error,
             _ => Color.Primary
         };
@@ -229,10 +213,11 @@ else
         return toStatus switch
         {
             LoanStatus.Open => "Send Back to Open",
-            LoanStatus.AwaitingReview => "Submit for Review",
+            LoanStatus.AwaitingReview => toStatus == LoanState.Value.SelectedLoan?.Status
+                ? "Keep in Review"
+                : "Submit for Review",
             LoanStatus.ApprovalPending => "Move to Approval Pending",
             LoanStatus.Approved => "Approve Loan",
-            LoanStatus.Construction => "Start Construction",
             LoanStatus.Denied => "Deny Loan",
             _ => toStatus.ToString()
         };

@@ -1,0 +1,43 @@
+@using LoanTracker.Web.Store.ProjectState
+@using System.Globalization
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@inject IState<ProjectState> ProjectState
+
+@if (ProjectState.Value.IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+}
+else if (!ProjectState.Value.Projects.Any())
+{
+    <MudAlert Severity="Severity.Info">No projects found for this loan.</MudAlert>
+}
+else
+{
+    <MudTable Items="@ProjectState.Value.Projects" Hover="true" Striped="true" Dense="true">
+        <HeaderContent>
+            <MudTh>Project Name</MudTh>
+            <MudTh>Budget</MudTh>
+            <MudTh>Description</MudTh>
+            <MudTh>Created</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Project Name">
+                <MudText Typo="Typo.body2"><strong>@context.ProjectName</strong></MudText>
+            </MudTd>
+            <MudTd DataLabel="Budget">
+                @context.Budget.ToString("C", CultureInfo.GetCultureInfo("en-US"))
+            </MudTd>
+            <MudTd DataLabel="Description">
+                <MudText Typo="Typo.body2">@context.Description</MudText>
+            </MudTd>
+            <MudTd DataLabel="Created">
+                @context.CreatedAt.ToString("MMM dd, yyyy")
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    [Parameter]
+    public Guid LoanId { get; set; }
+}
