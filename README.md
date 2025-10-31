@@ -17,11 +17,10 @@ A professional Blazor Server application demonstrating Clean Architecture, Domai
 This project follows **Clean Architecture** principles with clear separation of concerns:
 
 ```
-LoanTracker.sln
-├── LoanTracker.Domain          # Business entities and rules
-├── LoanTracker.Application     # Use cases (Commands/Queries)
-├── LoanTracker.Infrastructure  # Data access and external services
-└── LoanTracker.Web             # Blazor UI and presentation
+LoanTracker.Domain          # Business entities and rules
+LoanTracker.Application     # Use cases (Commands/Queries)
+LoanTracker.Infrastructure  # Data access and external services
+LoanTracker.Web             # Blazor UI and presentation
 ```
 
 ### Key Features
@@ -33,11 +32,11 @@ LoanTracker.sln
 
 ### Loan Workflow
 
-1. **Open** → Initial draft state
-2. **Awaiting Review** → Submitted for review
-3. **Approval Pending** → Under final review
-4. **Approved** → Loan approved (terminal state)
-5. **Denied** → Loan rejected (terminal state)
+1. **Open** Initial draft state
+2. **Awaiting Review** Submitted for review
+3. **Approval Pending** Under final review
+4. **Approved** Loan approved (terminal state)
+5. **Denied** Loan rejected (terminal state)
 
 ## Getting Started
 
@@ -48,7 +47,7 @@ LoanTracker.sln
 - [PostgreSQL 16](https://www.postgresql.org/download/) (if running without Docker)
 
 ### Corporate TLS inspection note
-If `dotnet restore` fails with SSL errors, export your org�s root (and intermediate) CA(s) and place them in `.certs/` (hidden folder).  
+If `dotnet restore` fails with SSL errors, export your org's root (and intermediate) CA(s) and place them in `.certs/` (hidden folder).  
 Then rebuild: `docker compose build --no-cache && docker compose up`.
 
 ### Running with Docker (Recommended)
@@ -165,11 +164,11 @@ Loan amounts range from $50,000 to $8,000,000 with various interest rates (3.5% 
 ### Workflow State Machine
 ```csharp
 // Valid transitions defined in WorkflowStateMachine
-Open → AwaitingReview
-AwaitingReview → ApprovalPending | Open
-ApprovalPending → Approved | Denied | AwaitingReview
-Approved → ∅ (terminal)
-Denied → ∅ (terminal)
+Open AwaitingReview
+AwaitingReview ApprovalPending | Open
+ApprovalPending Approved | Denied | AwaitingReview
+Approved (terminal)
+Denied (terminal)
 ```
 
 ## Development
