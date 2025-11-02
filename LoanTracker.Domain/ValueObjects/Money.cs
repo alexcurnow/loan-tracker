@@ -7,7 +7,12 @@ namespace LoanTracker.Domain.ValueObjects;
 public sealed record Money
 {
     public decimal Amount { get; init; }
-    public string Currency { get; init; }
+    public string Currency { get; init; } = "USD";
+
+    // Public parameterless constructor required for JSON deserialization
+    public Money()
+    {
+    }
 
     private Money(decimal amount, string currency)
     {

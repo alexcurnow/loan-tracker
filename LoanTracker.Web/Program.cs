@@ -11,6 +11,8 @@ using LoanTracker.Web.Components;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using Marten;
+using Marten.Events.Projections;
+using Marten.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,18 +43,32 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 );
 
 // Add Marten for Event Sourcing
-builder.Services.AddMarten(connectionString);
+builder.Services.AddMarten((Marten.StoreOptions opts) =>
+{
+    opts.Connection(connectionString);
+
+    // Register our projection (inline processing)
+    // For SingleStreamProjection, use Snapshot instead of Add
+    opts.Projections.Snapshot<LoanTracker.Infrastructure.Projections.DisbursementHistoryProjection>(
+        SnapshotLifecycle.Inline);
+})
+.UseLightweightSessions()
+.ApplyAllDatabaseChangesOnStartup(); // Auto-create schema on startup
 
 // Add repositories
 builder.Services.AddScoped<ILoanRepository, LoanRepository>();
 builder.Services.AddScoped<IBorrowerTypeRepository, BorrowerTypeRepository>();
 builder.Services.AddScoped<IProjectRepository, LoanTracker.Infrastructure.Repositories.ProjectRepository>();
-builder.Services.AddScoped<IDisbursementRepository, LoanTracker.Infrastructure.Repositories.DisbursementRepository>();
+// IDisbursementRepository removed - disbursements are now event-sourced
+
+// Add query implementations (event-sourced read models)
+builder.Services.AddScoped<LoanTracker.Application.Interfaces.IDisbursementQuery, LoanTracker.Infrastructure.Queries.DisbursementQuery>();
 
 // Add services
 builder.Services.AddScoped<WorkflowStateMachine>();
 builder.Services.AddScoped<InterestCalculationService>();
 builder.Services.AddScoped<IEventStore, LoanTracker.Infrastructure.Services.MartenEventStore>();
+builder.Services.AddScoped<LoanTracker.Infrastructure.Data.EventBasedSeeder>();
 
 // Add command handlers
 builder.Services.AddScoped<ICommandHandler<CreateLoanCommand, LoanTracker.Application.Common.Result<LoanTracker.Application.DTOs.LoanDto>>, CreateLoanCommandHandler>();
@@ -74,8 +90,13 @@ var app = builder.Build();
 // Apply migrations and seed database
 using (var scope = app.Services.CreateScope())
 {
+    // Apply EF Core migrations
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     dbContext.Database.Migrate();
+
+    // Seed event-sourced disbursements
+    var seeder = scope.ServiceProvider.GetRequiredService<LoanTracker.Infrastructure.Data.EventBasedSeeder>();
+    await seeder.SeedDisbursementsAsync();
 }
 
 // Configure the HTTP request pipeline.

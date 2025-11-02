@@ -44,10 +44,7 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
             .HasForeignKey(p => p.LoanId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(p => p.Disbursements)
-            .WithOne(d => d.Project)
-            .HasForeignKey(d => d.ProjectId)
-            .OnDelete(DeleteBehavior.Restrict);  // Don't cascade delete disbursements (immutable audit trail)
+        // Disbursements are now event-sourced via Marten, no EF Core relationship
 
         // Seed sample project data
         var sampleProjects = new List<Project>

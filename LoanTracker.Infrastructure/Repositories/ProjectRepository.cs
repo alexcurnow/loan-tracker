@@ -19,7 +19,6 @@ public class ProjectRepository : IProjectRepository
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.Projects
             .Include(p => p.Loan)
-            .Include(p => p.Disbursements)
             .FirstOrDefaultAsync(p => p.ProjectId == projectId);
     }
 
@@ -27,7 +26,6 @@ public class ProjectRepository : IProjectRepository
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.Projects
-            .Include(p => p.Disbursements)
             .Where(p => p.LoanId == loanId)
             .ToListAsync();
     }

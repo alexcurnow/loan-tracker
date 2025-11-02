@@ -1,6 +1,8 @@
 using LoanTracker.Application.Interfaces;
+using LoanTracker.Domain.Entities;
 using LoanTracker.Domain.Interfaces;
 using LoanTracker.Domain.Services;
+using LoanTracker.Domain.ValueObjects;
 
 namespace LoanTracker.Application.Queries;
 
@@ -8,16 +10,16 @@ public class GetLoanInterestAccrualsQueryHandler
     : IQueryHandler<GetLoanInterestAccrualsQuery, IEnumerable<InterestAccrualDto>>
 {
     private readonly ILoanRepository _loanRepository;
-    private readonly IDisbursementRepository _disbursementRepository;
+    private readonly IDisbursementQuery _disbursementQuery;
     private readonly InterestCalculationService _interestCalculationService;
 
     public GetLoanInterestAccrualsQueryHandler(
         ILoanRepository loanRepository,
-        IDisbursementRepository disbursementRepository,
+        IDisbursementQuery disbursementQuery,
         InterestCalculationService interestCalculationService)
     {
         _loanRepository = loanRepository;
-        _disbursementRepository = disbursementRepository;
+        _disbursementQuery = disbursementQuery;
         _interestCalculationService = interestCalculationService;
     }
 
@@ -30,8 +32,21 @@ public class GetLoanInterestAccrualsQueryHandler
             return Enumerable.Empty<InterestAccrualDto>();
         }
 
-        // 2. Get all disbursements for this loan
-        var disbursements = await _disbursementRepository.GetByLoanIdAsync(query.LoanId);
+        // 2. Get all disbursements from event-sourced projection
+        var disbursementReadModels = await _disbursementQuery.GetByLoanIdAsync(query.LoanId);
+
+        // Convert read models to domain entities for the calculation service
+        var disbursements = disbursementReadModels.Select(d => new Disbursement
+        {
+            DisbursementId = d.DisbursementId,
+            ProjectId = d.ProjectId,
+            AmountValue = d.Amount,
+            AmountCurrency = d.Currency,
+            DisbursementDate = d.DisbursementDate,
+            RecipientName = d.RecipientName,
+            RecipientDetails = d.RecipientDetails,
+            CreatedAt = d.RecordedAt
+        });
 
         // 3. Calculate accruals using domain service
         var accruals = _interestCalculationService.CalculateAccruals(

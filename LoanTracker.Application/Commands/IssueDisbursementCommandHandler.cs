@@ -14,20 +14,17 @@ public class IssueDisbursementCommandHandler
 {
     private readonly IProjectRepository _projectRepository;
     private readonly ILoanRepository _loanRepository;
-    private readonly IDisbursementRepository _disbursementRepository;
     private readonly IEventStore _eventStore;
     private readonly WorkflowStateMachine _workflowStateMachine;
 
     public IssueDisbursementCommandHandler(
         IProjectRepository projectRepository,
         ILoanRepository loanRepository,
-        IDisbursementRepository disbursementRepository,
         IEventStore eventStore,
         WorkflowStateMachine workflowStateMachine)
     {
         _projectRepository = projectRepository;
         _loanRepository = loanRepository;
-        _disbursementRepository = disbursementRepository;
         _eventStore = eventStore;
         _workflowStateMachine = workflowStateMachine;
     }
@@ -62,22 +59,14 @@ public class IssueDisbursementCommandHandler
         // 3. Create Money value object
         var amount = Money.FromDecimal(command.Amount, command.Currency);
 
-        // 4. Create immutable Disbursement
-        var disbursement = Disbursement.Create(
-            projectId: command.ProjectId,
-            amount: amount,
-            disbursementDate: command.DisbursementDate,
-            recipientName: command.RecipientName,
-            recipientDetails: command.RecipientDetails
-        );
+        // 4. Generate disbursement ID
+        var disbursementId = Guid.NewGuid();
+        var occurredAt = DateTime.UtcNow;
 
-        // 5. Save to database
-        await _disbursementRepository.AddAsync(disbursement);
-
-        // 6. Publish DisbursementIssued event
+        // 5. Create and append DisbursementIssued event (this is now the source of truth!)
         var disbursementEvent = new DisbursementIssued
         {
-            DisbursementId = disbursement.DisbursementId,
+            DisbursementId = disbursementId,
             LoanId = loan.LoanId,
             ProjectId = project.ProjectId,
             Amount = amount,
@@ -89,49 +78,48 @@ public class IssueDisbursementCommandHandler
 
         await _eventStore.AppendToStreamAsync(loan.LoanId, disbursementEvent);
 
-        // 7. Check if this is first disbursement → transition to Construction
-        if (loan.Status == LoanStatus.Approved)
+        // 6. Check if this is first disbursement → transition to Construction
+        // Query event stream to count disbursements
+        var streamEvents = await _eventStore.GetStreamEventsAsync(loan.LoanId);
+        var disbursementCount = streamEvents.Count(e => e is DisbursementIssued);
+        var isFirstDisbursement = disbursementCount == 1;
+
+        if (loan.Status == LoanStatus.Approved && isFirstDisbursement)
         {
-            var existingDisbursements = await _disbursementRepository.GetByLoanIdAsync(loan.LoanId);
-            var isFirstDisbursement = existingDisbursements.Count() == 1; // Only the one we just added
+            var oldStatus = loan.Status;
+            loan.Status = LoanStatus.Construction;
+            loan.UpdatedAt = DateTime.UtcNow;
+            await _loanRepository.UpdateAsync(loan);
 
-            if (isFirstDisbursement)
+            // Publish LoanStatusChanged event
+            var statusChangedEvent = new LoanStatusChanged
             {
-                var oldStatus = loan.Status;
-                loan.Status = LoanStatus.Construction;
-                loan.UpdatedAt = DateTime.UtcNow;
-                await _loanRepository.UpdateAsync(loan);
+                LoanId = loan.LoanId,
+                FromStatus = oldStatus,
+                ToStatus = LoanStatus.Construction,
+                Reason = "First disbursement issued",
+                ChangedBy = command.IssuedBy
+            };
 
-                // Publish LoanStatusChanged event
-                var statusChangedEvent = new LoanStatusChanged
-                {
-                    LoanId = loan.LoanId,
-                    FromStatus = oldStatus,
-                    ToStatus = LoanStatus.Construction,
-                    Reason = "First disbursement issued",
-                    ChangedBy = command.IssuedBy
-                };
-
-                await _eventStore.AppendToStreamAsync(loan.LoanId, statusChangedEvent);
-            }
+            await _eventStore.AppendToStreamAsync(loan.LoanId, statusChangedEvent);
         }
 
-        // 8. Save all events
+        // 7. Save all events (Marten projections will auto-update!)
         await _eventStore.SaveChangesAsync();
 
-        // 9. Return DTO
+        // 8. Return DTO
         var dto = new DisbursementDto
         {
-            DisbursementId = disbursement.DisbursementId,
-            ProjectId = disbursement.ProjectId,
+            DisbursementId = disbursementId,
+            ProjectId = command.ProjectId,
             LoanId = loan.LoanId,
-            Amount = disbursement.AmountValue,
-            Currency = disbursement.AmountCurrency,
-            DisbursementDate = disbursement.DisbursementDate,
-            RecipientName = disbursement.RecipientName,
-            RecipientDetails = disbursement.RecipientDetails,
-            CreatedAt = disbursement.CreatedAt,
-            IsBackdated = disbursement.DisbursementDate < disbursement.CreatedAt.Date
+            Amount = amount.Amount,
+            Currency = amount.Currency,
+            DisbursementDate = command.DisbursementDate,
+            RecipientName = command.RecipientName,
+            RecipientDetails = command.RecipientDetails,
+            CreatedAt = occurredAt,
+            IsBackdated = command.DisbursementDate < occurredAt.Date
         };
 
         return Result<DisbursementDto>.Success(dto);

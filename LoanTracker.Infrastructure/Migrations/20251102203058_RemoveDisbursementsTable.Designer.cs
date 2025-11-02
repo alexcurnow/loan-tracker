@@ -3,6 +3,7 @@ using System;
 using LoanTracker.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LoanTracker.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251102203058_RemoveDisbursementsTable")]
+    partial class RemoveDisbursementsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -80,6 +83,43 @@ namespace LoanTracker.Infrastructure.Migrations
                             Description = "State government agency",
                             TypeName = "State Agency"
                         });
+                });
+
+            modelBuilder.Entity("LoanTracker.Domain.Entities.Disbursement", b =>
+                {
+                    b.Property<Guid>("DisbursementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AmountCurrency")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("AmountValue")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("DisbursementDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RecipientDetails")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RecipientName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("DisbursementId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("Disbursement");
                 });
 
             modelBuilder.Entity("LoanTracker.Domain.Entities.Loan", b =>
@@ -595,6 +635,17 @@ namespace LoanTracker.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("LoanTracker.Domain.Entities.Disbursement", b =>
+                {
+                    b.HasOne("LoanTracker.Domain.Entities.Project", "Project")
+                        .WithMany("Disbursements")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+                });
+
             modelBuilder.Entity("LoanTracker.Domain.Entities.Loan", b =>
                 {
                     b.HasOne("LoanTracker.Domain.Entities.BorrowerType", "BorrowerType")
@@ -625,6 +676,11 @@ namespace LoanTracker.Infrastructure.Migrations
             modelBuilder.Entity("LoanTracker.Domain.Entities.Loan", b =>
                 {
                     b.Navigation("Projects");
+                });
+
+            modelBuilder.Entity("LoanTracker.Domain.Entities.Project", b =>
+                {
+                    b.Navigation("Disbursements");
                 });
 #pragma warning restore 612, 618
         }

@@ -20,7 +20,7 @@ public class Project
 
     // Navigation properties
     public Loan? Loan { get; set; }
-    public ICollection<Disbursement> Disbursements { get; set; } = new List<Disbursement>();
+    // Disbursements are now event-sourced via Marten, not stored as navigation property
 
     // Domain property using Value Object
     public Money Budget
