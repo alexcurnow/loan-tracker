@@ -4,6 +4,7 @@ using LoanTracker.Application.Interfaces;
 using LoanTracker.Domain.Entities;
 using LoanTracker.Domain.Enums;
 using LoanTracker.Domain.Interfaces;
+using LoanTracker.Domain.Types;
 
 namespace LoanTracker.Application.Commands;
 
@@ -14,7 +15,7 @@ public record CreateLoanCommand(
     string ContactEmail,
     decimal Amount,
     decimal InterestRate,
-    int TermYears,
+    TermYears TermYears,
     string Purpose
 );
 

@@ -1,4 +1,5 @@
 using LoanTracker.Domain.Enums;
+using LoanTracker.Domain.Types;
 using LoanTracker.Domain.ValueObjects;
 
 namespace LoanTracker.Domain.Entities;
@@ -12,7 +13,7 @@ public class Loan
     public string ContactEmail { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public decimal InterestRate { get; set; }
-    public int TermYears { get; set; }
+    public TermYears TermYears { get; set; }
     public string Purpose { get; set; } = string.Empty;
     public DateTime ApplicationDate { get; set; }
     public LoanStatus Status { get; set; }

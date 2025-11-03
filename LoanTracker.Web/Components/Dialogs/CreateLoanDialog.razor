@@ -4,6 +4,8 @@
 @using LoanTracker.Domain.Entities
 @using System.ComponentModel.DataAnnotations
 @using System.Globalization
+@using Dots.Standard.StrongTypes
+@using LoanTracker.Domain.Types
 @inherits Fluxor.Blazor.Web.Components.FluxorComponent
 @inject IState<LoanState> LoanState
 @inject IDispatcher Dispatcher
@@ -145,7 +147,7 @@
             _model.ContactEmail,
             _model.Amount,
             _model.InterestRate,
-            _model.TermYears,
+            _model.TermYears.As<TermYears>(),
             _model.Purpose
         ));
 

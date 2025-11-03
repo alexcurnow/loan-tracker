@@ -1,3 +1,4 @@
+using Dots.Standard.StrongTypes;
 using Fluxor;
 using LoanTracker.Application.Commands;
 using LoanTracker.Application.Interfaces;
@@ -34,7 +35,10 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
     ?? "Host=localhost;Database=loantracker;Username=postgres;Password=postgres";
 
 builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString)
+    {
+        options.UseNpgsql(connectionString);
+        options.AddStrongTypeConverters();
+    }
 );
 
 // Also add DbContext for migration purposes

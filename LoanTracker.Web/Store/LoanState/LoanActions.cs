@@ -1,5 +1,6 @@
 using LoanTracker.Application.DTOs;
 using LoanTracker.Domain.Enums;
+using LoanTracker.Domain.Types;
 
 namespace LoanTracker.Web.Store.LoanState;
 
@@ -56,7 +57,7 @@ public sealed record CreateLoanAction(
     string ContactEmail,
     decimal Amount,
     decimal InterestRate,
-    int TermYears,
+    TermYears TermYears,
     string Purpose);
 
 public class CreateLoanSuccessAction

@@ -80,6 +80,7 @@ ScaffoldingReadMe.txt
 *.snupkg
 **/packages/*
 !**/packages/build/
+!**/nuget/local/*
 
 # Docker
 **/obj/Docker/
