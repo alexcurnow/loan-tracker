@@ -35,9 +35,7 @@ public class IssueDisbursementCommandHandler
         var project = await _projectRepository.GetByIdAsync(command.ProjectId);
         if (project == null)
         {
-            return Result<DisbursementDto>.Failure(
-                Error.NotFound($"Project with ID {command.ProjectId} not found")
-            );
+            return Error.NotFound($"Project with ID {command.ProjectId} not found");
         }
 
         // 2. Validate loan exists and is in appropriate status
@@ -122,6 +120,6 @@ public class IssueDisbursementCommandHandler
             IsBackdated = command.DisbursementDate < occurredAt.Date
         };
 
-        return Result<DisbursementDto>.Success(dto);
+        return dto;
     }
 }

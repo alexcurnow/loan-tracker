@@ -80,11 +80,11 @@ public class CreateLoanCommandHandler : ICommandHandler<CreateLoanCommand, Resul
                 UpdatedAt = createdLoan.UpdatedAt
             };
 
-            return Result<LoanDto>.Success(loanDto);
+            return loanDto;
         }
         catch (Exception ex)
         {
-            return Result<LoanDto>.Failure(Error.ServerError($"Failed to create loan: {ex.Message}"));
+            return Error.ServerError($"Failed to create loan: {ex.Message}");
         }
     }
 }

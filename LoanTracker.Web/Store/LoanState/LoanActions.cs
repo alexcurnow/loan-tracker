@@ -49,30 +49,16 @@ public class LoadLoanByIdFailureAction
 }
 
 // Create loan
-public class CreateLoanAction
-{
-    public string BorrowerName { get; }
-    public int BorrowerTypeId { get; }
-    public string ContactPerson { get; }
-    public string ContactEmail { get; }
-    public decimal Amount { get; }
-    public decimal InterestRate { get; }
-    public int TermYears { get; }
-    public string Purpose { get; }
+public sealed record CreateLoanAction(
+    string BorrowerName,
+    int BorrowerTypeId,
+    string ContactPerson,
+    string ContactEmail,
+    decimal Amount,
+    decimal InterestRate,
+    int TermYears,
+    string Purpose);
 
-    public CreateLoanAction(string borrowerName, int borrowerTypeId, string contactPerson, string contactEmail,
-        decimal amount, decimal interestRate, int termYears, string purpose)
-    {
-        BorrowerName = borrowerName;
-        BorrowerTypeId = borrowerTypeId;
-        ContactPerson = contactPerson;
-        ContactEmail = contactEmail;
-        Amount = amount;
-        InterestRate = interestRate;
-        TermYears = termYears;
-        Purpose = purpose;
-    }
-}
 public class CreateLoanSuccessAction
 {
     public LoanDto Loan { get; }
